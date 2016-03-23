@@ -7,7 +7,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
-#include <sys/timerfd.h>
 #include <errno.h>
 
 #include "utility.h"
@@ -15,36 +14,12 @@
 
 #define BUFFER_SIZE 1000
 
-struct timespec {
-   time_t tv_sec;                /* Secondes */
-   long   tv_nsec;               /* Nanosecondes */
-};
-
-struct itimerspec {
-   struct timespec it_interval;  /* Intervalle pour les
-                                    minuteries périodiques */
-   struct timespec it_value;     /* Expiration initiale */
-};
-
-
-int check_timeout(fd timer_fd){
-	uint64_t exp;
-	s = read(fd, &exp, sizeof(uint64_t));
-}
-
 int main() {
-	struct itimerspec timeout_value;
     int num_read;
     int buf_size;
 	int listen_fd = inetListen("8080", 5, NULL);
 	if (listen_fd == -1)
 		errExit("inetListen");
-
-	//timeout value
-	timeout_value.it_interval.tv_sec = 0;
-	timeout_value.it_interval.tv_nsec = 0;
-	timeout_value.it_value.tv_sec = 10;
-	timeout_value.it_value.tv_nsec = 0;
 	
 	// Turn on non-blocking mode on stdin
     int flags = fcntl(STDIN_FILENO, F_GETFL);
@@ -77,9 +52,6 @@ int main() {
 				close(client_fd);
 			} else {
 				printf("New client connected!\n");
-				int timer_fd = timerfd_create(CLOCK_REALTIME, 0);
-				if (timerfd_settime(timer_fd, , &timeout_value, NULL) ==-1)
-					errExit("timerfd_settime");
 				if (num_read == 0) {
 				    printf("nothing read from client");
 			    } else {
