@@ -31,15 +31,19 @@ int getFile(const char *filePath){
 	return file_fd
 }
 
-void writeFile(int writeTo_fd, const char *filePath){
+int writeFile(int writeTo_fd, const char *filePath){
 	
-	myFile_fd = getFile(filePath);
+	if(myFile_fd = getFile(filePath) == -1){
+		return -1;
+	}
 
 	int BUFSIZE = 100;
         char buf[BUFSIZE];
         int numread = 0;
 
        	while((numread = readline(STDIN_FILENO, buf, BUFSIZE)) > 0){
-		       write(writeTo_fd, buf, numread);
+		write(writeTo_fd, buf, numread);
        	}
+
+	return 0;
 }
