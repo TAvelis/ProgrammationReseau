@@ -1,49 +1,15 @@
-//Method from Lab1
-int readline(int fd, char *buf, int nbytes) {
-    int numread = 0;
-    int returnval;
-    while (numread < nbytes - 1) {
-        returnval = read(fd, buf + numread, 1);
-        /* If the read() syscall was interrupted by a signal */
-        if ((returnval == -1) && (errno == EINTR))
-            continue;
-        /* A value of returnval equal to 0 indicates end of file */
-        if ( (returnval == 0) && (numread == 0) )
-            return 0;
-        if (returnval == 0)
-            break;
-        if (returnval == -1)
-            return -1;
-        numread++;
-        if (buf[numread-1] == '\n') {
-            /* make this buffer a null-terminated string */
-            buf[numread] = '\0';
-            return numread;
-        }
-    }
-    /* set errno to "invalid argument" */
-    errno = EINVAL;
-    return -1;
-}
-
-int getFile(const char *filePath){
-	int file_fd = open(filePath, O_RDONLY);
-	return file_fd
-}
-
-int writeFile(int writeTo_fd, const char *filePath){
+char* writeFile(const char *filePath){
 	
-	if(myFile_fd = getFile(filePath) == -1){
-		return -1;
-	}
+	FILE *myFile = fopen(filePath, "r");
+	fseek(myFile, 0L, SEEK_END);
+	long file_size = ftell(myFile);
+	fseek(myfile, 0L, SEEK_SET);
 
-	int BUFSIZE = 100;
-        char buf[BUFSIZE];
-        int numread = 0;
+	char *buf = malloc(file_size + 1);
+	fread(buf, fsize, 1, myFile);
+	fclose(myFile);
 
-       	while((numread = readline(STDIN_FILENO, buf, BUFSIZE)) > 0){
-		write(writeTo_fd, buf, numread);
-       	}
+	buf[file_size] = 0;
 
-	return 0;
+	return buf;
 }
