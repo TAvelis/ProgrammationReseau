@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-//Here lies our hours of work, RIP
-=======
 // COMPILE WITH:
 // gcc ./sws_q2.c -o sws_q2 utility.o inet_socket.o -std=c99
 
@@ -104,4 +101,3 @@ int main() {
 	
 	return 1;
 }
->>>>>>> 7d27a801822a5b451f867023ca9a9692de1aa5fd
