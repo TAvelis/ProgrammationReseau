@@ -112,14 +112,14 @@ int main() {
 			    char* fileToGet = "one/idex.html";
 			    char* newBuf = writeFile(fileToGet);
 			    if(newBuf == "404"){
-		                sprintf(buffer,"HTTP/1.1 404 Not Found\r\nDate: Mon, 27 Jul 2009 12:28:53 GMT\r\nServer: Apache/2.2.14 (Win32)\r\nLast-Modified: Wed, 22 Jul 2009 19:15:56 GMT\r\nContent-Length: 58\r\nContent-Type: text/html\r\nConnection: keep-alive\r\n\r\n");
+				char* superNewBuf = writeFile("404.html");
+		                sprintf(buffer,"HTTP/1.1 404 Not Found\r\nDate: Mon, 27 Jul 2009 12:28:53 GMT\r\nServer: Apache/2.2.14 (Win32)\r\nLast-Modified: Wed, 22 Jul 2009 19:15:56 GMT\r\nContent-Length: %lu\r\nContent-Type: text/html; charset=UTF-8\r\nConnection: keep-alive\r\n", strlen(superNewBuf));
 		            	printf("%s\n", buffer);
 		            	write(client_fd, buffer, strlen(buffer));
-				char* superNewBuf = writeFile("404");
 		            	printf("%s\n", superNewBuf);
 				write(client_fd, superNewBuf, strlen(superNewBuf));
 			    }else{
-		                sprintf(buffer,"HTTP/1.1 200 OK\r\nDate: Mon, 27 Jul 2009 12:28:53 GMT\r\nServer: Apache/2.2.14 (Win32)\r\nLast-Modified: Wed, 22 Jul 2009 19:15:56 GMT\r\nContent-Length: 58\r\nContent-Type: text/html; charset=UTF-8\r\nConnection: keep-alive\r\n\r\n");
+		                sprintf(buffer,"HTTP/1.1 200 OK\r\nDate: Mon, 27 Jul 2009 12:28:53 GMT\r\nServer: Apache/2.2.14 (Win32)\r\nLast-Modified: Wed, 22 Jul 2009 19:15:56 GMT\r\nContent-Length: %lu\r\nContent-Type: text/html; charset=UTF-8\r\nConnection: keep-alive\r\n\r\n", strlen(newBuf));
 		            	printf("%s\n", buffer);
 		            	write(client_fd, buffer, strlen(buffer));
 			    	printf("%s\n", newBuf);
