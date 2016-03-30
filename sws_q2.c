@@ -20,9 +20,7 @@
  */ 
 #define BUFFER_SIZE 2000
 
-int main() {
-    int num_read;
-    
+int main(int argc, char *argv[]) {
     // listen to the client on port 8080
 	int listen_fd = inetListen("8080", 5, NULL);
 	if (listen_fd == -1) {
@@ -63,6 +61,7 @@ int main() {
 		 * num_read: number of char read
 		 * buffer: request's content storage
 		 */
+		int num_read;
 		if (listen_fd != -1) {
 		    num_read = read(client_fd, &buffer, BUFFER_SIZE);
 		}
@@ -82,15 +81,16 @@ int main() {
 				printf("New client connected!\n");
 				// try to print the request header in the console
 				if (num_read == 0) {
-				    printf("ERROR: no request read from the client");
+				    printf("ERROR: no request read from the client\n");
 			    } else {
 			        // seek the request ending's signature in the data received
 			        char* request_ending = "\r\n\r\n";
 			        char* ending_ptr = strstr(buffer, request_ending);
 			        // get the index of the ending
 			        int ending_index = ending_ptr - buffer;
-			        // print the request header until reaching the ending signature
-		            printf("%.*s\n\n", ending_index, buffer);
+			        // Server log : HTTP request Header
+		            sprintf(buffer, "%.*s\n", ending_index, buffer);
+		            printf("%s", buffer);
 	            }
 			}
 		}

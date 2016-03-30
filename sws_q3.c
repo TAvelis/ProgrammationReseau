@@ -20,9 +20,7 @@
  */ 
 #define BUFFER_SIZE 2000
 
-int main() {
-    int num_read;
-    
+int main(int argc, char *argv[]) {
     // listen to the client on port 8080
 	int listen_fd = inetListen("8080", 5, NULL);
 	if (listen_fd == -1) {
@@ -63,6 +61,7 @@ int main() {
 		 * num_read: number of char read
 		 * buffer: request's content storage
 		 */
+		int num_read;
 		if (listen_fd != -1) {
 		    num_read = read(client_fd, &buffer, BUFFER_SIZE);
 		}
@@ -89,12 +88,15 @@ int main() {
 			        char* ending_ptr = strstr(buffer, request_ending);
 			        // get the index of the ending
 			        int ending_index = ending_ptr - buffer;
-			        // print the request header until reaching the ending signature
-		            printf("%.*s\n\n", ending_index, buffer);
+			        // Server log : HTTP request Header
+		            sprintf(buffer, "%.*s\n", ending_index, buffer);
+		            printf("%s", buffer);
 		            
-		            
-		           sprintf(buffer,"HTTP/1.1 200 OK\r\nDate: Mon, 27 Jul 2009 12:28:53 GMT\r\nServer: Apache/2.2.14 (Win32)\r\nLast-Modified: Wed, 22 Jul 2009 19:15:56 GMT\r\nContent-Length: 58\r\nContent-Type: text/html; charset=UTF-8\r\nConnection: Closed\r\n\r\nHere you go! :)\n");
+		            // Prepare HTTP response
+		            sprintf(buffer,"HTTP/1.1 200 OK\r\nDate: Mon, 27 Jul 2009 12:28:53 GMT\r\nServer: Apache/2.2.14 (Win32)\r\nLast-Modified: Wed, 22 Jul 2009 19:15:56 GMT\r\nContent-Length: 58\r\nContent-Type: text/html; charset=UTF-8\r\nConnection: Closed\r\n\r\nHere you go! :)\n");
+		            // Server log : HTTP response
 		            printf("%s\n", buffer);
+		            // Send HTTP response
 		            write(client_fd, buffer, strlen(buffer));
 	            }
 			}
