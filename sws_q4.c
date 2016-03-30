@@ -21,6 +21,21 @@
  */ 
 #define BUFFER_SIZE 2000
 
+char* writeFile(const char *filePath){
+	int file_fd = open(filePath, O_RDONLY);
+	if(file_fd == -1){
+		return "404";
+	}
+	struct stat fileStats;
+	stat(filePath, &fileStats);
+	char* buf = malloc(fileStats.st_size + 1);
+       	read(file_fd, buf, fileStats.st_size);
+        close(file_fd);
+
+       	buf[fileStats.st_size] = 0;
+	return buf;
+}
+
 int main() {
     int num_read;
     
@@ -94,10 +109,22 @@ int main() {
 		            printf("%.*s\n\n", ending_index, buffer);
 		            
 		            
-		           sprintf(buffer,"HTTP/1.1 200 OK\r\nDate: Mon, 27 Jul 2009 12:28:53 GMT\r\nServer: Apache/2.2.14 (Win32)\r\nLast-Modified: Wed, 22 Jul 2009 19:15:56 GMT\r\nContent-Length: 58\r\nContent-Type: text/html; charset=UTF-8\r\nConnection: Closed\r\n\r\n");
-		            printf("%s\n", buffer);
-		            write(client_fd, buffer, strlen(buffer));
-			    write(client_fd, "Here you go!", strlen("Here you go!"));
+			    char* fileToGet = "one/idex.html";
+			    char* newBuf = writeFile(fileToGet);
+			    if(newBuf == "404"){
+		                sprintf(buffer,"HTTP/1.1 404 Not Found\r\nDate: Mon, 27 Jul 2009 12:28:53 GMT\r\nServer: Apache/2.2.14 (Win32)\r\nLast-Modified: Wed, 22 Jul 2009 19:15:56 GMT\r\nContent-Length: 58\r\nContent-Type: text/html\r\nConnection: keep-alive\r\n\r\n");
+		            	printf("%s\n", buffer);
+		            	write(client_fd, buffer, strlen(buffer));
+				char* superNewBuf = writeFile("404");
+		            	printf("%s\n", superNewBuf);
+				write(client_fd, superNewBuf, strlen(superNewBuf));
+			    }else{
+		                sprintf(buffer,"HTTP/1.1 200 OK\r\nDate: Mon, 27 Jul 2009 12:28:53 GMT\r\nServer: Apache/2.2.14 (Win32)\r\nLast-Modified: Wed, 22 Jul 2009 19:15:56 GMT\r\nContent-Length: 58\r\nContent-Type: text/html; charset=UTF-8\r\nConnection: keep-alive\r\n\r\n");
+		            	printf("%s\n", buffer);
+		            	write(client_fd, buffer, strlen(buffer));
+			    	printf("%s\n", newBuf);
+			    	write(client_fd, newBuf, strlen(newBuf));
+	            }
 	            }
 			}
 		}
@@ -107,20 +134,4 @@ int main() {
 	close(listen_fd);
 	
 	return 1;
-}
-
-char* writeFile(const char *filePath){
-
-        FILE *myFile = fopen(filePath, "r");
-        fseek(myFile, 0L, SEEK_END);
-        long file_size = ftell(myFile);
-        fseek(myfile, 0L, SEEK_SET);
-
-        char *buf = malloc(file_size + 1);
-        fread(buf, fsize, 1, myFile);
-        fclose(myFile);
-
-        buf[file_size] = 0;
-
-        return buf;
 }
