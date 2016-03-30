@@ -1,5 +1,5 @@
 // COMPILE WITH:
-// gcc ./sws_q4.c -o sws_q4 utility.o inet_socket.o -std=c99
+// gcc ./sws_q5.c -o sws_q5 utility.o inet_socket.o -std=c99
 
 #include <unistd.h>
 #include <stdio.h>
@@ -41,7 +41,7 @@ char* writeFile(const char *filePath){
 int main(int argc, char *argv[]) {
     // check input parameters
     if (argc != 2) {
-        printf("Usage: sws_q4 [server_directory]\n");
+        printf("Usage: sws_q5 [server_directory]\n");
         return -1;
     } else {
         DIR* server_dir = opendir(argv[1]);
