@@ -22,7 +22,7 @@
 #define EPOLL_SIZE 2000
 #define MAX_EVENTS 2000
 
-void checkInputParams(int argc, char argv){
+int checkInputParams(int argc, char *argv[]){
     if (argc != 2) {
         printf("Usage: sws_q5 [server_directory]\n");
         return -1;
@@ -38,6 +38,7 @@ void checkInputParams(int argc, char argv){
             errExit("opendir");
         }
     }
+    return 0;
 }
 
 void setMode(int fd, int cmd){
@@ -48,9 +49,9 @@ void setMode(int fd, int cmd){
     }
 }
 
-void addToInterestList(epoll_fd, int fd, int op){
+void addToInterestList(int epoll_fd, int fd, int op, struct epoll_event event){
     event.data.fd = fd;
-	if (op != NULL){
+	if (op != 0){
 		event.events = op;
 	}
     if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &event) == -1) {
@@ -74,7 +75,7 @@ char* writeFile(const char *file_path){
     return buf;
 }
 
-void acceptClientConnection(int listen_fd){
+void acceptClientConnection(int listen_fd, int epoll_fd, struct epoll_event event){
 	int client_fd;
 	while (1) {
 		struct sockaddr in_addr;
@@ -106,16 +107,17 @@ void acceptClientConnection(int listen_fd){
 			*/
 			setMode(client_fd, F_GETFL);
 			
-			addToInterestList(epoll_fd, client_fd, EPOLLIN);
+			addToInterestList(epoll_fd, client_fd, EPOLLIN, event);
 		}
 	}
 }
 
-void sendResponse(char *file_path){
-	char* fileToSend = writeFile(file_path);
+void sendResponse(int fd, char *file_path){
+	char* response = "";
+	char* file_to_send = writeFile(file_path);
 
 	// Prepare HTTP response
-	sprintf(response, "HTTP/1.1 200 OK\r\nContent-Length: %d\r\nContent-Type: text/html; charset=UTF-8\r\nConnection: Closed\r\n\r\n%s", (int)strlen(fileToSend), fileToSend);
+	sprintf(response, "HTTP/1.1 200 OK\r\nContent-Length: %d\r\nContent-Type: text/html; charset=UTF-8\r\nConnection: Closed\r\n\r\n%s", (int)strlen(file_to_send), file_to_send);
 	// Server log : HTTP response
 	printf("reponse:\n%s\n", response);
 	// Send HTTP response
@@ -128,39 +130,39 @@ void send404(int fd){
 	// not a directory nor a file, send Error 404
 	file_to_send = writeFile("404.html");
 	// Prepare HTTP response
-	sprintf(response, "HTTP/1.1 404 Bad Request\r\nContent-Length: %d\r\nContent-Type: text/html; charset=UTF-8\r\nConnection: Closed\r\n\r\n%s", (int)strlen(fileToSend), fileToSend);
+	sprintf(response, "HTTP/1.1 404 Bad Request\r\nContent-Length: %d\r\nContent-Type: text/html; charset=UTF-8\r\nConnection: Closed\r\n\r\n%s", (int)strlen(file_to_send), file_to_send);
 	// Server log : HTTP response
 	printf("%s\n", response);
 	// Send HTTP response
 	write(fd, response, strlen(response));
 }
 
-int respond(char *file_path, char *server_path){
+int respond(int fd, char *file_path, char *server_path){
 	char response[BUFFER_SIZE];
 	int return_val = 0;
 	DIR* requested_dir = opendir(file_path);
 	// if no file requested
 	if (strlen(file_path) == strlen(server_path)) {
-		sendResponse("index.html");
+		sendResponse(fd, "index.html");
 	} else if (requested_dir) {
 		//this is a directory, send its index.html
 		//TODO check that file_path ends with a "/"
 		strcat(file_path, "index.html");
 		printf("send directory: %s", file_path);
-		sendResponse(file_path);
+		sendResponse(fd, file_path);
 	} else if( access( file_path, F_OK ) != -1 ){
 		// this is a file, send it back to the client 
-		sendResponse(file_path);
+		sendResponse(fd, file_path);
 	} else {
 		send404(fd);
-		returnVal = -1;
+		return_val = -1;
 	}
 	
 	closedir(requested_dir);
-	return returnVal;
+	return return_val;
 }
 
-void processRequestAndRespond(char *buffer, char *file_path)
+void processRequestAndRespond(int fd, char *buffer, char *file_path_base)
 {
 	// seek the request ending's signature in the data received
 	char* request_ending = "\r\n\r\n";
@@ -173,7 +175,7 @@ void processRequestAndRespond(char *buffer, char *file_path)
 	printf("%s\n", request_header);
 	
 	// Extract name of requested file
-	char* server_path = file_path;
+	char* server_path = file_path_base;
 	char requested_file[BUFFER_SIZE];
 	char file_path[BUFFER_SIZE];
 	
@@ -185,17 +187,15 @@ void processRequestAndRespond(char *buffer, char *file_path)
 	strcat(file_path, requested_file);
 	printf("file path: %s\n", file_path);
 	
-	if (respond(file_path, server_path) == -1){
-		continue;
-	}
-	break;
+	respond(fd, file_path, server_path);
 }
 
 
-void respondToRequest(struct epoll_event events, char *file_path){
+void respondToRequest(struct epoll_event *events, char *file_path, int i, int listen_fd){
 	while (1) {
 		// storage buffer for HTTP request header
 		char buffer[BUFFER_SIZE];
+		int num_read;
 		/* read the full request from the client if listen_fd != -1
 		* num_read: number of char read
 		* buffer: request's content storage
@@ -206,18 +206,18 @@ void respondToRequest(struct epoll_event events, char *file_path){
 		if (num_read == -1) {
 			if (errno != EAGAIN) {
 			  perror("read");
-			  done = 1;
+			 // done = 1;
 			}
 		} else if (num_read == 0) {
-			done = 1;
+			// done = 1;
 			break;
 		}
 		
-		processRequestAndRespond(buffer, file_path);
+		processRequestAndRespond(listen_fd, buffer, file_path);
 	}
 }
 
-runServerUntilShutdown(int epoll_fd, struct epoll_event events, int listen_fd, char *file_path){
+void runServerUntilShutdown(int epoll_fd, struct epoll_event *events, int listen_fd, char *file_path){
 	for (;;) {
 		int nb_fd_ready = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
 
@@ -245,11 +245,11 @@ runServerUntilShutdown(int epoll_fd, struct epoll_event events, int listen_fd, c
 	            close (events[i].data.fd);
 	            continue;
 	        } else if (listen_fd == events[i].data.fd) {
-				acceptClientConnection(listen_fd);
+				acceptClientConnection(listen_fd, epoll_fd, events[i]);
 		        continue;
 	        } else {
 	            int done = 0;
-				respondToRequest(events, file_path);
+				respondToRequest(events, file_path, i, listen_fd);
 		        
 		        //TODO : persistent connections, so no close, have to check if it works
 		        if (done) {
@@ -267,7 +267,8 @@ int main(int argc, char *argv[]) {
     struct epoll_event *events;
     
     // check input parameters
-	checkInputParams(argc, argv);
+	if(checkInputParams(argc, argv) == -1)
+		return -1;
     
     // listen to the client on port 8080
 	int listen_fd = inetListen("8080", 5, NULL);
@@ -293,10 +294,10 @@ int main(int argc, char *argv[]) {
     }
     
     // add listen_fd to the interest list
-	addToInterestList(epoll_fd, listen_fd, EPOLLIN | EPOLLET);
+	addToInterestList(epoll_fd, listen_fd, EPOLLIN | EPOLLET, event);
     
     // add STDIN to the interest list
-	addToInterestList(epoll_fd, STDIN_FILENO, NULL);
+	addToInterestList(epoll_fd, STDIN_FILENO, 0, event);
     
 	// storage buffer for events
 	events = calloc(MAX_EVENTS, sizeof(event));
